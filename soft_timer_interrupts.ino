@@ -1,3 +1,7 @@
+#include <PulseEvent.h>
+
+PulseEventOutput myOut;
+PulseEventInput myIn;
 IntervalTimer myTimer;
 
 #define NVIC_STIR (*(volatile uint32_t *)0xE000EF00)
@@ -21,6 +25,35 @@ void softISR() {
         delay(1000); // if we are at a high priorty then we block the blinking for this time, if it is lower then nothing seems to happen, as the blinks intureut this function
 }
 
+
+int count=0;
+void EventFunction(){
+
+  int i, num;
+
+  // Every time new data arrives, simply print it
+  // to the Arduino Serial Monitor.
+  num = myIn.available();
+  if (num > 0) {
+    count = count + 1;
+    Serial.print("EventFunction: ");
+    Serial.print(count);
+    Serial.print(" :  ");
+    for (i=1; i <= num; i++) {
+      float val = myIn.read(i);
+      Serial.print(val);
+      Serial.print("  ");
+    }
+    Serial.println();
+  }else{
+  Serial.println("num==0");
+  }
+
+
+}
+
+
+
 int interruptID=IRQ_SOFTWARE;
 void setup(void)
 {
@@ -30,10 +63,21 @@ void setup(void)
   myTimer.priority(128);
   
   
+  
    _VectorsRam[interruptID+16] = softISR;    
    NVIC_ENABLE_IRQ(interruptID); 
    //NVIC_SET_PRIORITY(interrupt, 150); //nothing seems to happen  
    NVIC_SET_PRIORITY(interruptID, 100); //there will be a pause in the flashing.
+   
+   
+     myOut.begin(9);  // connect pins 9 and 10 together...
+  myIn.begin(10,EventFunction);
+  myOut.write(1, 600.03);
+  myOut.write(2, 1500);
+  myOut.write(3, 759.24);
+  // slots 4 and 5 will default to 1500 us
+  myOut.write(6, 1234.56);
+   
 }
 
 
